@@ -58,8 +58,8 @@ def main():
                     print tid
                     print "Profit after tax", profit
                     print "Tax", tax_10 
-                    print "Tax over profit %", tax_10/(profit+tax_10)*100
-                    print "Profit over investment %", profit / ( vol_avg_10*buy ) *100
+                    print "Tax over profit %", tax_10/profit*100
+                    print "Profit over investment %", profit / (vol_avg_10*buy) *100
                     print
                     continue
         except Exception:
