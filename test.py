@@ -40,24 +40,26 @@ def main():
             request = "http://api.eve-central.com/api/marketstat/json?typeid=%s&usesystem=30000142" % tid
             stream = urllib2.urlopen(request).read()
             d = simplejson.loads(stream.strip("]").strip("["))
-            sell = d['sell']['min']
-            buy = d['buy']['max']
+            sell = d['sell']['wavg']
+            buy = d['buy']['wavg']
             vol_sell = d['sell']['volume']
             vol_buy = d['buy']['volume']
             sell = float(sell)
             buy = float(buy)
             vol_sell = float(vol_sell)
             vol_buy = float(vol_buy)
+            vol_avg_10 = (vol_sell+vol_buy)/2/10
             if abs(vol_sell-vol_buy) < 0.2*vol_sell and abs(vol_sell-vol_buy) < 0.2*vol_buy:
-                profit = profit_after_tax(buy,sell,(vol_sell+vol_buy)/2/10)
-                POI = profit / ( (vol_sell+vol_buy)/2/10*buy ) *100
+                tax_10 = tax(buy,sell,vol_avg_10)
+                profit = profit_after_tax(buy,sell,vol_avg_10)
+                POI = profit / ( vol_avg_10*buy ) *100
                 if profit > 0:
                     profits[tid] = POI
                     print tid
                     print "Profit after tax", profit
-                    print "Tax", tax(buy,sell,(vol_sell+vol_buy)/2/10)
-                    print "Tax over profit %", tax(buy,sell,(vol_sell+vol_buy)/2/10)/profit*100
-                    print "Profit over investment %", profit / ( (vol_sell+vol_buy)/2/10*buy ) *100
+                    print "Tax", tax_10 
+                    print "Tax over profit %", tax_10/(profit+tax_10)*100
+                    print "Profit over investment %", profit / ( vol_avg_10*buy ) *100
                     print
                     continue
         except Exception:
