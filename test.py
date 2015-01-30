@@ -25,6 +25,7 @@ def getTypeIDsFromText():
     typeids = [line.strip('\n').split('\t') for line in typeids_file.readlines()]
     typeids = [t for t in typeids if len(t)==2]
     typeids = dict(typeids)
+    return typeids
 
 def getTypeIDsFromYAML():
     f = open('typeIDs.yaml','r')
@@ -32,7 +33,7 @@ def getTypeIDsFromYAML():
     return d.keys()
 
 def main():
-    typeids = getTypeIDsFromYAML()
+    typeids = getTypeIDsFromText()
     
     profits = {}
     for tid in typeids:
@@ -48,18 +49,19 @@ def main():
             buy = float(buy)
             vol_sell = float(vol_sell)
             vol_buy = float(vol_buy)
-            vol_avg_10 = (vol_sell+vol_buy)/2/10
+            vol_avg_10 = (vol_sell + vol_buy)/2/10
             if abs(vol_sell-vol_buy) < 0.2*vol_sell and abs(vol_sell-vol_buy) < 0.2*vol_buy:
-                tax_10 = tax(buy,sell,vol_avg_10)
                 profit = profit_after_tax(buy,sell,vol_avg_10)
-                POI = profit / ( vol_avg_10*buy ) *100
                 if profit > 0:
+                    POI = profit / ( vol_avg_10*buy ) *100
+                    tax_10 = tax(buy,sell,vol_avg_10)
+
                     profits[tid] = POI
-                    print tid
-                    print "Profit after tax", profit
-                    print "Tax", tax_10 
-                    print "Tax over profit %", tax_10/profit*100
-                    print "Profit over investment %", profit / (vol_avg_10*buy) *100
+                    print typeids[tid]
+                    print "Profit after tax %.2f" % profit
+                    print "Investment %.2f" % (vol_avg_10*buy)
+                    print "Tax over profit %.2f" % (tax_10/profit*100)
+                    print "Profit over investment %.2f" % POI
                     print
                     continue
         except Exception:
