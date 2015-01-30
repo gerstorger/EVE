@@ -1,7 +1,10 @@
 import simplejson
 import urllib2
 
-
+import cPickle as pickle
+from collections import OrderedDict
+from operator import itemgetter
+import yaml
 
 def broker_fee (broker_rel, fact_st, corp_st):
     return (1.000 - 0.050 * broker_rel) / 2 ** (0.1400 * fact_st + 0.06000 * corp_st)
@@ -17,51 +20,61 @@ def tax (buy, sell, vol, broker_fee = BROKER_FEE, sell_tax=SELL_TAX):
 def profit_after_tax (buy, sell, vol, broker_fee = BROKER_FEE, sell_tax=SELL_TAX):
     return vol*(sell - buy) - tax(buy,sell,vol,broker_fee,sell_tax)
 
-typeids_file = open('typeids.txt','r')
-typeids = [line.strip('\n').split('\t') for line in typeids_file.readlines()]
-typeids = [t for t in typeids if len(t)==2]
-typeids = dict(typeids)
+def getTypeIDsFromText():
+    typeids_file = open('typeids.txt','r')
+    typeids = [line.strip('\n').split('\t') for line in typeids_file.readlines()]
+    typeids = [t for t in typeids if len(t)==2]
+    typeids = dict(typeids)
 
-profits = {}
+def getTypeIDsFromYAML():
+    f = open('typeIDs.yaml','r')
+    d = yaml.load(f)
+    return d.keys()
 
-##counter = 0
-
-for tid in typeids:
-    request = "https://api.eve-central.com/api/marketstat/json?typeid=%s&usesystem=30000142" % tid
-    stream = urllib2.urlopen(request).read()
-    d = simplejson.loads(stream.strip("]").strip("["))
-    sell = d['sell']['wavg']
-    buy = d['buy']['wavg']
-    vol_sell = d['sell']['volume']
-    vol_buy = d['buy']['volume']
-    sell = float(sell)
-    buy = float(buy)
-    vol_sell = float(vol_sell)
-    vol_buy = float(vol_buy)
-    if abs(vol_sell-vol_buy) < 0.2*vol_sell and abs(vol_sell-vol_buy) < 0.2*vol_buy:
-        profit = profit_after_tax(buy,sell,(vol_sell+vol_buy)/2/10)
-        if profit > 0:
-            profits[tid] = profit
-##            counter = counter + 1
-            print "Added", typeids[tid]
-            print "Profit after tax", profit
-            print "Tax", tax(buy,sell,(vol_sell+vol_buy)/2/10)
-            print "Tax over profit %", tax(buy,sell,(vol_sell+vol_buy)/2/10)/profit*100
-            print "Profit over investment %", profit / ( (vol_sell+vol_buy)/2/10*buy ) *100
+def main():
+    typeids = getTypeIDsFromYAML()
+    
+    profits = {}
+    for tid in typeids:
+        try:
+            request = "http://api.eve-central.com/api/marketstat/json?typeid=%s&usesystem=30000142" % tid
+            stream = urllib2.urlopen(request).read()
+            d = simplejson.loads(stream.strip("]").strip("["))
+            sell = d['sell']['min']
+            buy = d['buy']['max']
+            vol_sell = d['sell']['volume']
+            vol_buy = d['buy']['volume']
+            sell = float(sell)
+            buy = float(buy)
+            vol_sell = float(vol_sell)
+            vol_buy = float(vol_buy)
+            if abs(vol_sell-vol_buy) < 0.2*vol_sell and abs(vol_sell-vol_buy) < 0.2*vol_buy:
+                profit = profit_after_tax(buy,sell,(vol_sell+vol_buy)/2/10)
+                POI = profit / ( (vol_sell+vol_buy)/2/10*buy ) *100
+                if profit > 0:
+                    profits[tid] = POI
+                    print tid
+                    print "Profit after tax", profit
+                    print "Tax", tax(buy,sell,(vol_sell+vol_buy)/2/10)
+                    print "Tax over profit %", tax(buy,sell,(vol_sell+vol_buy)/2/10)/profit*100
+                    print "Profit over investment %", profit / ( (vol_sell+vol_buy)/2/10*buy ) *100
+                    print
+                    continue
+        except Exception:
+            print "Error", tid
             continue
-##    if counter > 10:
-##        break
+    result = OrderedDict(sorted(profits.items(), key=itemgetter(1)))
+    try:
+        with open("resultPOI.txt", "w") as result_file:
+            pickle.dump(result, result_file)
+    except Exception:
+        print "Can't write file"  
+        
 
-from collections import OrderedDict
-from operator import itemgetter
-result = OrderedDict(sorted(profits.items(), key=itemgetter(1)))
-##print result.values()
 
-import cPickle as pickle
 
-with open("result.txt", "w") as result_file:
-    pickle.dump(result, result_file)
-
+if __name__ =='__main__':
+    main()
 
 ##"""
 ##Example Python EMDR client.
