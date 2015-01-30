@@ -58,10 +58,10 @@ def main():
 
                     profits[tid] = POI
                     print typeids[tid]
-                    print "Profit after tax %.2f" % profit
-                    print "Investment %.2f" % (vol_avg_10*buy)
-                    print "Tax over profit %.2f" % (tax_10/profit*100)
-                    print "Profit over investment %.2f" % POI
+                    print "PAT %s" % '{:20,.2f}'.format(profit)
+                    print "INV %s" % '{:20,.2f}'.format(vol_avg_10*buy)
+                    print "TOP %s" % '{:20,.2f}'.format(tax_10/profit*100)
+                    print "POI %s" % '{:20,.2f}'.format(POI)
                     print
                     continue
         except Exception:
