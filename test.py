@@ -10,8 +10,8 @@ def broker_fee (broker_rel, fact_st, corp_st):
     return (1.000 - 0.050 * broker_rel) / 2 ** (0.1400 * fact_st + 0.06000 * corp_st)
 
 BROKER_REL = 5
-FACT_ST = 1.5
-CORP_ST = 3.5
+FACT_ST = 3.44
+CORP_ST = 4.62
 BROKER_FEE = broker_fee(BROKER_REL, FACT_ST, CORP_ST)/100
 SELL_TAX= 0.75/100
 
@@ -56,7 +56,7 @@ def main():
                     POI = profit / ( vol_avg_10*buy ) *100
                     tax_10 = tax(buy,sell,vol_avg_10)
 
-                    profits[tid] = POI
+                    profits[tid] = {"PAT":profit, "INV":vol_avg_10*buy, "TOP":tax_10/profit*100, "POI": POI}
                     print typeids[tid]
                     print "PAT %s" % '{:20,.2f}'.format(profit)
                     print "INV %s" % '{:20,.2f}'.format(vol_avg_10*buy)
@@ -67,10 +67,10 @@ def main():
         except Exception:
             print "Error", tid
             continue
-    result = OrderedDict(sorted(profits.items(), key=itemgetter(1)))
+##    result = OrderedDict(sorted(profits.items(), key=itemgetter(1)))
     try:
-        with open("resultPOI.txt", "w") as result_file:
-            pickle.dump(result, result_file)
+        with open(str(datetime.datetime.now()[:-7]), "w") as result_file:
+            pickle.dump(profits, result_file)
     except Exception:
         print "Can't write file"  
         
